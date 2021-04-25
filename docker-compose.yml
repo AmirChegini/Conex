@@ -1,0 +1,57 @@
+version: '3.1'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: api
+    container_name: conex-api
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 80:3000
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+      
+    depends_on:
+      - redis
+      - database
+    networks:
+      - api-network
+    command: yarn start
+
+  database:
+    image: mongo:4.2.2
+    container_name: conex-database
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 27017:27017
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_DATABASE: api
+      MONGO_INITDB_ROOT_USERNAME: $DB_USERNAME
+      MONGO_INITDB_ROOT_PASSWORD: $DB_PASSWORD
+    volumes:
+      - conex-db-data:/data/db
+    networks:
+      - api-network
+
+  redis:
+    image: redis:5.0.7-alpine
+    container_name: conex-redis
+    restart: unless-stopped
+    tty: true
+    command: ["redis-server"]
+    ports:
+      - 6379:6379
+    networks:
+      - api-network
+
+networks:
+  api-network:
+    driver: bridge
